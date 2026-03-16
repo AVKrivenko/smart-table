@@ -15,35 +15,32 @@ import {rules, createComparison} from "../lib/compare.js";
 export function initSearching(searchField) {
     console.log('initSearching инициализирован с полем:', searchField);
     
-    // Создаем компаратор для поиска
-    // Используем skipEmptyTargetValues и rules.searchMultipleFields
+    // Правильно настраиваем поиск по нескольким полям
     const compare = createComparison(
         { skipEmptyTargetValues: true },
         rules.searchMultipleFields(searchField, ['date', 'customer', 'seller'], false)
     );
     
     return (data, state, action) => {
-        console.log('applySearch вызван:', {
-            длинаДанных: data?.length,
-            поисковыйЗапрос: state?.[searchField],
-            действие: action
-        });
-        
-        // Получаем поисковый запрос из state
         const searchQuery = state?.[searchField]?.trim() || '';
         
         // Если поисковый запрос пустой, возвращаем все данные
         if (!searchQuery) {
-            console.log('Поисковый запрос пустой, данные без изменений');
             return data;
         }
         
-        // Применяем поиск
+        // Фильтруем данные по поисковому запросу
         const searchResult = data.filter(row => {
-            // Компаратор сравнивает строку поиска с данными строки
-            // Создаем объект с поисковым запросом для компаратора
-            const searchState = { [searchField]: searchQuery };
-            return compare(row, searchState);
+            // Проверяем каждое поле для поиска
+            const fields = ['date', 'customer', 'seller'];
+            
+            for (const field of fields) {
+                const fieldValue = row[field]?.toString().toLowerCase() || '';
+                if (fieldValue.includes(searchQuery.toLowerCase())) {
+                    return true; // Нашли совпадение в одном из полей
+                }
+            }
+            return false; // Нет совпадений
         });
         
         console.log('Результаты поиска:', {
@@ -52,6 +49,7 @@ export function initSearching(searchField) {
             запрос: searchQuery
         });
         
+        // ВАЖНО: возвращаем пустой массив, если нет совпадений
         return searchResult;
     };
 }
