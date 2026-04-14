@@ -9,7 +9,7 @@ export function initSearching(searchField) {
             const searchValue = state[searchField].trim();
             console.log('Добавляем поиск:', searchValue);
             
-            // ВАЖНО: сохраняем все существующие параметры в query
+            // сохраняем все существующие параметры в query
             return {
                 ...query,  // сохраняем все существующие параметры (пагинацию и т.д.)
                 search: searchValue

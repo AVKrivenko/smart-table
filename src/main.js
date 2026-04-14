@@ -43,41 +43,30 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 async function render(action) {
-    console.log('render вызван с action:', action);
-    
     let state = collectState();
-    console.log('state:', state);
-    
     let query = {};
 
     // ПРИМЕНЯЕМ ПОИСК
     if (typeof applySearch === 'function') {
         query = applySearch(query, state, action);
-        console.log('После поиска query:', query);
     }
       
     // ПРИМЕНЯЕМ ПАГИНАЦИЮ
     if (typeof applyPagination === 'function') {
         query = applyPagination(query, state, action);
-        console.log('После пагинации query:', query);
     }
         // ПРИМЕНЯЕМ СОРТИРОВКУ
     if (typeof applySorting === 'function') {
         query = applySorting(query, state, action);
-        console.log('После сортировки query:', query);
     }
     
         // ПРИМЕНЯЕМ ФИЛЬТРАЦИЮ
     if (typeof applyFiltering === 'function') {
         query = applyFiltering(query, state, action);
-        console.log('После фильтрации query:', query);
     }
     
-    console.log('Итоговый query:', query);
-    
     const { total, items } = await API.getRecords(query);
-    console.log('Получено от API:', { total, items });
-    
+
     if (typeof updatePagination === 'function') {
         updatePagination(total, query);
     }
@@ -86,13 +75,13 @@ async function render(action) {
     console.log('рендер завершен');
 }
 
-// СОЗДАЕМ ТАБЛИЦУ
+    // СОЗДАЕМ ТАБЛИЦУ
 sampleTable = initTable({
-    tableTemplate: 'table',
-    rowTemplate: 'row',
-    before: ['search','header','filter'],
-    after: ['pagination'] 
-}, render);
+        tableTemplate: 'table',
+        rowTemplate: 'row',
+        before: ['search','header','filter'],
+        after: ['pagination'] 
+    }, render);
 
 // ИНИЦИАЛИЗИРУЕМ КОМПОНЕНТЫ, КОТОРЫЕ НЕ ЗАВИСЯТ ОТ ИНДЕКСОВ
 const pagination = initPagination(
@@ -129,7 +118,6 @@ async function init() {
     try {
         // Получаем индексы с сервера
         const indexes = await API.getIndexes();
-        console.log('Индексы получены:', indexes);
         
         // Теперь, когда индексы есть, инициализируем фильтрацию правильно
         const filtering = initFiltering(sampleTable.filter.elements, {
