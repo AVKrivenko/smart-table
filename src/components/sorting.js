@@ -1,10 +1,11 @@
-import {sortCollection, sortMap} from "../lib/sort.js";
+import {sortMap} from "../lib/sort.js";
+
 
 export function initSorting(columns) {
     console.log('initSorting инициализирован с колонками:', columns);
     
-    return (data, state, action) => {
-        console.log('applySorting вызван:', {dataLength: data.length, action});
+    return (query, state, action) => {
+        console.log('applySorting вызван:', {query, action});
         
         let field = null;
         let order = null;
@@ -50,16 +51,10 @@ export function initSorting(columns) {
             });
         }
 
-        // Применяем сортировку к данным (ТОЛЬКО если есть поле и порядок)
-        if (field && order && order !== 'none') {
-            console.log('Применяем сортировку:', {field, order});
-            const sortedData = sortCollection(data, field, order);
-            console.log('Данные после сортировки:', sortedData.length);
-            return sortedData;
-        }
+        // Формируем параметр сортировки для сервера
+        const sort = (field && order && order !== 'none') ? `${field}:${order}` : null;
         
-        // Если нет активной сортировки, возвращаем данные как есть
-        console.log('Сортировка не применяется');
-        return data;
+        // Если есть сортировка, добавляем её в query, если нет - возвращаем query без изменений
+        return sort ? Object.assign({}, query, { sort }) : query;
     }
 }

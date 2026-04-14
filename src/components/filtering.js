@@ -1,101 +1,34 @@
-// import {createComparison, defaultRules} from "../lib/compare.js";
+export function initFiltering(elements) {
+    const updateIndexes = (elements, indexes) => {
+        Object.keys(indexes).forEach((elementName) => {
+            elements[elementName].append(...Object.values(indexes[elementName]).map(name => {
+                const el = document.createElement('option');
+                el.textContent = name;
+                el.value = name;
+                return el;
+            }))
+        })
+    }
 
-// // @todo: #4.3 — настроить компаратор
+    const applyFiltering = (query, state, action) => {
+        // код с обработкой очистки поля
+         
 
-// export function initFiltering(elements, indexes) {
-//     // @todo: #4.1 — заполнить выпадающие списки опциями
-
-//     return (data, state, action) => {
-//         // @todo: #4.2 — обработать очистку поля
-
-//         // @todo: #4.5 — отфильтровать данные используя компаратор
-//         return data;
-//     }
-// }
-import {createComparison, defaultRules} from "../lib/compare.js";
-
-export function initFiltering(elements, indexes) {
-    console.log('initFilter инициализирован', {elements, indexes});
-    
-    // @todo: #4.1 — заполнить выпадающие списки данными
-    Object.keys(indexes).forEach((elementName) => {
-        const element = elements[elementName];
-        if (!element) return;
-        
-        // Очищаем текущие опции
-        while (element.options.length > 0) {
-            element.remove(0);
-        }
-        
-        // Добавляем пустую опцию для возможности сброса
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = 'Все';
-        element.appendChild(emptyOption);
-        
-        // Добавляем новые опции
-        Object.values(indexes[elementName]).forEach(value => {
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = value;
-            element.appendChild(option);
-        });
-    });
-    
-    // Создаем функцию сравнения
-    const compare = createComparison(defaultRules);
-    
-    return (data, state, action) => {
-        console.log('applyFilter вызван:', state);
-        
-        // @todo: #4.2 — очистка полей фильтров
-        if (action?.name === 'clear') {
-            const field = action.dataset?.field;
-            if (field && state) {
-                state[field] = '';
-                // Находим и очищаем поле ввода
-                const input = action.closest('.filter-group')?.querySelector('input, select');
-                if (input) {
-                    if (input.tagName === 'SELECT') {
-                        input.selectedIndex = 0;
-                    } else {
-                        input.value = '';
-                    }
+        // @todo: #4.5 — отфильтровать данные, используя компаратор
+        const filter = {};
+        Object.keys(elements).forEach(key => {
+            if (elements[key]) {
+                if (['INPUT', 'SELECT'].includes(elements[key].tagName) && elements[key].value) { // ищем поля ввода в фильтре с непустыми данными
+                    filter[`filter[${elements[key].name}]`] = elements[key].value; // чтобы сформировать в query вложенный объект фильтра
                 }
             }
-        }
-        
-        // @todo: #4.4 — фильтрация данных с учетом числовых диапазонов
-        const filteredData = data.filter(row => {
-            // Проверяем каждый фильтр в state
-            for (const [key, value] of Object.entries(state)) {
-                // Пропускаем пустые значения и специальные поля
-                if (!value || key === 'rowsPerPage' || key === 'page') continue;
-                
-                // Специальная обработка для числовых полей (totalFrom/totalTo)
-                if (key === 'totalFrom' && value) {
-                    const numValue = parseFloat(value);
-                    const rowValue = parseFloat(row.total);
-                    if (isNaN(rowValue) || rowValue < numValue) return false;
-                }
-                else if (key === 'totalTo' && value) {
-                    const numValue = parseFloat(value);
-                    const rowValue = parseFloat(row.total);
-                    if (isNaN(rowValue) || rowValue > numValue) return false;
-                }
-                // Для остальных полей используем стандартный компаратор
-                else {
-                    // Создаем объект с одним полем для сравнения
-                    const testState = { [key]: value };
-                    if (!compare(row, testState)) return false;
-                }
-            }
-            return true;
-        });
-        
-        console.log('После фильтрации:', filteredData.length);
-        
-        // @todo: #4.5 — вернуть отфильтрованные данные
-        return filteredData;
-    };
+        })
+
+        return Object.keys(filter).length ? Object.assign({}, query, filter) : query; // если в фильтре что-то добавилось, применим к запросу
+    }
+
+    return {
+        updateIndexes,
+        applyFiltering
+    }
 }
