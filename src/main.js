@@ -106,9 +106,10 @@ applySorting = initSorting([
     sampleTable.header.elements.sortByTotal
 ]);
 
-// ВРЕМЕННО СОЗДАЕМ ЗАГЛУШКУ ДЛЯ ФИЛЬТРАЦИИ
-applyFiltering = (query) => query; // временная функция, которая ничего не делает
-updateIndexes = () => {}; // временная функция
+const filtering = initFiltering(sampleTable.filter.elements);
+applyFiltering = filtering.applyFiltering;
+updateIndexes = filtering.updateIndexes;
+
 
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
@@ -118,15 +119,20 @@ async function init() {
     try {
         // Получаем индексы с сервера
         const indexes = await API.getIndexes();
+        console.log('Индексы получены:', indexes);
         
-        // Теперь, когда индексы есть, инициализируем фильтрацию правильно
-        const filtering = initFiltering(sampleTable.filter.elements, {
-            searchBySeller: indexes.sellers
-        });
+        // Подготавливаем индексы для фильтрации продавцов
+        // API возвращает { sellers: { id: name, ... }, customers: {...} }
+        const filterIndexes = {
+            searchBySeller: Object.values(indexes.sellers) // массив имен продавцов
+        };
         
-        // Обновляем функции фильтрации
-        applyFiltering = filtering.applyFiltering;
-        updateIndexes = filtering.updateIndexes;
+        console.log('Filter indexes:', filterIndexes);
+        
+        // Обновляем выпадающий список продавцов
+        if (typeof updateIndexes === 'function') {
+            updateIndexes(sampleTable.filter.elements, filterIndexes);
+        }
         
         // Запускаем рендер
         await render();
