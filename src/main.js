@@ -115,26 +115,59 @@ const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
 
 // АСИНХРОННАЯ ИНИЦИАЛИЗАЦИЯ
+// Функция для настройки обработчиков очистки
+function setupClearButtons() {
+    // Находим все кнопки очистки в фильтрах
+    const clearButtons = document.querySelectorAll('.filter-wrapper button[name="clear"]');
+    
+    clearButtons.forEach(button => {
+        // Удаляем старые обработчики, чтобы не было дублирования
+        button.removeEventListener('click', handleClearClick);
+        // Добавляем новый обработчик
+        button.addEventListener('click', handleClearClick);
+    });
+}
+
+// Обработчик клика по кнопке очистки
+function handleClearClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const button = e.currentTarget;
+    const fieldName = button.dataset.field;
+    console.log('Кнопка очистки нажата для поля:', fieldName);
+    
+    // Находим поле ввода в том же контейнере
+    const wrapper = button.closest('.filter-wrapper');
+    if (wrapper) {
+        const input = wrapper.querySelector('input');
+        if (input) {
+            input.value = '';
+            console.log('Очищено поле:', fieldName, 'новое значение:', input.value);
+        }
+    }
+    
+    // Вызываем рендер с действием очистки
+    render({ name: 'clear', dataset: { field: fieldName } });
+}
+
+// Вызовите setupClearButtons после инициализации таблицы
 async function init() {
     try {
-        // Получаем индексы с сервера
         const indexes = await API.getIndexes();
         console.log('Индексы получены:', indexes);
         
-        // Подготавливаем индексы для фильтрации продавцов
-        // API возвращает { sellers: { id: name, ... }, customers: {...} }
         const filterIndexes = {
-            searchBySeller: Object.values(indexes.sellers) // массив имен продавцов
+            searchBySeller: Object.values(indexes.sellers)
         };
         
-        console.log('Filter indexes:', filterIndexes);
-        
-        // Обновляем выпадающий список продавцов
         if (typeof updateIndexes === 'function') {
             updateIndexes(sampleTable.filter.elements, filterIndexes);
         }
         
-        // Запускаем рендер
+        // Настраиваем обработчики кнопок очистки
+        setupClearButtons();
+        
         await render();
     } catch (error) {
         console.error('Ошибка при инициализации:', error);

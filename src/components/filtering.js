@@ -1,18 +1,28 @@
 export function initFiltering(elements) {
     const updateIndexes = (elements, indexes) => {
-        // Очищаем существующие опции (оставляем только первую - "Все")
         Object.keys(indexes).forEach((elementName) => {
             if (elements[elementName]) {
-                // Очищаем select, оставляя только опцию "Все" если она есть
+                // Сохраняем текущее значение
+                const currentValue = elements[elementName].value;
+                
+                // Очищаем select
                 elements[elementName].innerHTML = '<option value="all">Все продавцы</option>';
                 
-                // Добавляем новые опции из индексов
-                elements[elementName].append(...Object.values(indexes[elementName]).map(name => {
+                // Добавляем новые опции
+                const values = Object.values(indexes[elementName]);
+                values.forEach(name => {
                     const el = document.createElement('option');
                     el.textContent = name;
                     el.value = name;
-                    return el;
-                }));
+                    elements[elementName].appendChild(el);
+                });
+                
+                // Восстанавливаем значение, если оно было выбрано
+                if (currentValue && currentValue !== 'all' && values.includes(currentValue)) {
+                    elements[elementName].value = currentValue;
+                } else {
+                    elements[elementName].value = 'all';
+                }
             }
         });
     };
@@ -23,10 +33,27 @@ export function initFiltering(elements) {
         // @todo: #4.2 — обработка очистки фильтров
         if (action && action.name === 'clear') {
             const fieldName = action.dataset?.field;
+            console.log('Очистка фильтра для поля:', fieldName);
+            
             if (fieldName && elements[fieldName]) {
-                // Сбрасываем значение поля
-                elements[fieldName].value = 'all';
-                console.log('Очищен фильтр:', fieldName);
+                const element = elements[fieldName];
+                
+                // Сбрасываем значение в зависимости от типа элемента
+                if (element.tagName === 'SELECT') {
+                    element.value = 'all';
+                } else if (element.tagName === 'INPUT') {
+                    element.value = '';
+                }
+                
+                console.log(`Очищен фильтр ${fieldName}, новое значение:`, element.value);
+                
+                // Удаляем этот фильтр из query
+                const newQuery = { ...query };
+                const filterKey = `filter[${element.name}]`;
+                delete newQuery[filterKey];
+                
+                // Возвращаем query без этого фильтра
+                return newQuery;
             }
         }
         
@@ -35,16 +62,17 @@ export function initFiltering(elements) {
         
         Object.keys(elements).forEach(key => {
             const element = elements[key];
-            if (element) {
-                // Проверяем, что это поле ввода и оно имеет значение
-                if (['INPUT', 'SELECT'].includes(element.tagName)) {
-                    const value = element.value;
-                    // Добавляем фильтр только если значение не пустое и не равно 'all'
-                    if (value && value !== 'all') {
-                        // Формируем параметр filter[имя_поля]
-                        filter[`filter[${element.name}]`] = value;
-                        console.log(`Добавлен фильтр ${element.name}:`, value);
-                    }
+            if (element && ['INPUT', 'SELECT'].includes(element.tagName)) {
+                const value = element.value;
+                // Для INPUT: проверяем что значение не пустая строка
+                // Для SELECT: проверяем что значение не 'all' и не пустая строка
+                const isValid = element.tagName === 'INPUT' 
+                    ? value && value.trim() !== ''
+                    : value && value !== 'all' && value !== '';
+                
+                if (isValid) {
+                    filter[`filter[${element.name}]`] = value;
+                    console.log(`Добавлен фильтр ${element.name}:`, value);
                 }
             }
         });
@@ -56,7 +84,6 @@ export function initFiltering(elements) {
             return { ...query, ...filter };
         }
         
-        // Если фильтров нет, возвращаем query без изменений
         return query;
     };
 
